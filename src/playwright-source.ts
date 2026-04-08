@@ -1,18 +1,19 @@
 import type { BrowserContext, Route } from '@playwright/test'
+import { isCommonAssetRequest } from 'msw'
 import { NetworkSource } from 'msw/experimental'
+import { PlaywrightHttpNetworkFrame } from './frames/http-frame.js'
 import {
   convertToRequest,
   handleRouteSafely,
   INTERNAL_MATCH_ALL_REG_EXP,
 } from './utils.js'
-import { isCommonAssetRequest } from 'msw'
 
 interface PlaywrightSourceOptions {
   context: BrowserContext
   skipAssetRequests?: boolean
 }
 
-export class PlaywrightSource extends NetworkSource {
+export class PlaywrightSource extends NetworkSource<PlaywrightHttpNetworkFrame> {
   #context: BrowserContext
   #skipAssetRequests: boolean
 
@@ -46,5 +47,10 @@ export class PlaywrightSource extends NetworkSource {
     if (this.#skipAssetRequests && isCommonAssetRequest(request)) {
       return await handleRouteSafely(() => route.fallback())
     }
+
+    // TODO: Do we need a id for the frame? Do we need to store the frame in a map like Interceptor- and ServiceWorkerSource?
+    const frame = new PlaywrightHttpNetworkFrame({ route, request })
+    // TODO: Looks like queuing does not trigger response resolution. Something else is missing.
+    await this.queue(frame)
   }
 }
