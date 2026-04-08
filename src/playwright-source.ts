@@ -50,7 +50,6 @@ export class PlaywrightSource extends NetworkSource<PlaywrightHttpNetworkFrame> 
 
     // TODO: Do we need a id for the frame? Do we need to store the frame in a map like Interceptor- and ServiceWorkerSource?
     const frame = new PlaywrightHttpNetworkFrame({ route, request })
-    // TODO: Looks like queuing does not trigger response resolution. Something else is missing.
     await this.queue(frame)
   }
 }

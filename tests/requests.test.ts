@@ -1,19 +1,24 @@
 import { test as testBase, expect } from '@playwright/test'
 import { http, type AnyHandler } from 'msw'
-import { defineNetworkFixture, type NetworkFixture } from '../src/index.js'
+import { defineNetwork } from 'msw/experimental'
+import { PlaywrightSource } from '../src/playwright-source.js'
 
 interface Fixtures {
   handlers: Array<AnyHandler>
-  network: NetworkFixture
+  network: ReturnType<typeof defineNetwork<PlaywrightSource[]>>
 }
 
 const test = testBase.extend<Fixtures>({
   handlers: [[], { option: true }],
   network: [
     async ({ context, handlers }, use) => {
-      const network = defineNetworkFixture({
-        context,
+      const network = defineNetwork({
+        sources: [new PlaywrightSource({ context })],
         handlers,
+        context: {
+          // TODO: Extract baseUrl from request and somehow pass it along into HttpNetworkFrame.prototype.resolve().
+          baseUrl: 'http://localhost:5173',
+        },
       })
 
       await network.enable()
