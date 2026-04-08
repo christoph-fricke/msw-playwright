@@ -1,0 +1,54 @@
+import type { Route } from '@playwright/test'
+
+/**
+ * @note Use a match-all RegExp with an optional group as the predicate
+ * for the `page.route()`/`page.unroute()` calls. Playwright treats given RegExp
+ * as the handler ID, which allows us to remove only those handlers introduces by us
+ * without carrying the reference to the handler function around.
+ */
+export const INTERNAL_MATCH_ALL_REG_EXP = /.+(__MSW_PLAYWRIGHT_PREDICATE__)?/
+
+export async function convertToRequest(route: Route): Promise<Request> {
+  const request = route.request()
+  return new Request(request.url(), {
+    method: request.method(),
+    headers: new Headers(await request.allHeaders()),
+    // TODO: Can we get rid of the type cast?
+    body: request.postDataBuffer() as null | ArrayBuffer,
+  })
+}
+
+export async function fulfillResponse(
+  route: Route,
+  response: Response,
+): Promise<void> {
+  await route.fulfill({
+    status: response.status,
+    headers: Object.fromEntries(response.headers),
+    body: response.body ? Buffer.from(await response.arrayBuffer()) : undefined,
+  })
+}
+
+export async function handleRouteSafely(
+  callback: () => Promise<void>,
+): Promise<void> {
+  try {
+    await callback()
+  } catch (error) {
+    /**
+     * @note Ignore "Route is already handled!" errors.
+     * Playwright has a bug where requests terminated due to navigation
+     * cause your in-flight route handlers to throw. There's no means to
+     * detect that scenario as both "route.handled" and "route._handlingPromise" are internal.
+     * @see https://github.com/mswjs/playwright/issues/35
+     */
+    if (
+      error instanceof Error &&
+      /route is already handled/i.test(error.message)
+    ) {
+      return
+    }
+
+    throw error
+  }
+}
