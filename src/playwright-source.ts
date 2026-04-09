@@ -48,7 +48,6 @@ export class PlaywrightSource extends NetworkSource<PlaywrightHttpNetworkFrame> 
       return await handleRouteSafely(() => route.fallback())
     }
 
-    // TODO: Do we need a id for the frame? Do we need to store the frame in a map like Interceptor- and ServiceWorkerSource?
     const frame = new PlaywrightHttpNetworkFrame({ route, request })
     await this.queue(frame)
   }

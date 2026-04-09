@@ -10,6 +10,7 @@ interface PlaywrightHttpNetworkFrameOptions {
 
 export class PlaywrightHttpNetworkFrame extends HttpNetworkFrame {
   #route: Route
+
   constructor(options: PlaywrightHttpNetworkFrameOptions) {
     super(options)
     this.#route = options.route
