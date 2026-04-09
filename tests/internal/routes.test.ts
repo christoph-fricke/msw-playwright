@@ -5,26 +5,34 @@
  */
 import { test as testBase, expect } from '@playwright/test'
 import type { AnyHandler } from 'msw'
-import { INTERNAL_MATCH_ALL_REG_EXP } from '../../src/fixture.js'
-import { defineNetworkFixture, type NetworkFixture } from '../../src/index.js'
+import { defineNetwork } from 'msw/experimental'
+import { PlaywrightSource } from '../../src/index.js'
+import { INTERNAL_MATCH_ALL_REG_EXP } from '../../src/utils.js'
 
 interface Fixtures {
   handlers: Array<AnyHandler>
-  network: NetworkFixture
+  network: ReturnType<typeof defineNetwork<PlaywrightSource[]>>
 }
 
 const test = testBase.extend<Fixtures>({
   handlers: [[], { option: true }],
   network: [
-    async ({ context, handlers }, use) => {
-      const network = defineNetworkFixture({
-        context,
+    async ({ context, handlers, baseURL }, use) => {
+      const network = defineNetwork({
+        sources: [new PlaywrightSource({ context })],
         handlers,
+        context: {
+          // TODO: Extract baseUrl from request and somehow pass it along into HttpNetworkFrame.prototype.resolve().
+          baseUrl: baseURL,
+        },
       })
 
       await network.enable()
       await use(network)
-      await network.disable()
+      // FIXME: Should be able to use `NetworkReadyState` or a string literal comparison...
+      if (network.readyState === 1) {
+        await network.disable()
+      }
     },
     { auto: true },
   ],

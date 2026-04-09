@@ -1,7 +1,7 @@
 import { test as testBase, expect } from '@playwright/test'
 import { http, HttpResponse, type AnyHandler } from 'msw'
 import { defineNetwork } from 'msw/experimental'
-import { PlaywrightSource } from '../src/playwright-source.js'
+import { PlaywrightSource } from '../src/index.js'
 
 interface Fixtures {
   handlers: Array<AnyHandler>
@@ -11,13 +11,13 @@ interface Fixtures {
 const test = testBase.extend<Fixtures>({
   handlers: [[], { option: true }],
   network: [
-    async ({ context, handlers }, use) => {
+    async ({ context, handlers, baseURL }, use) => {
       const network = defineNetwork({
         sources: [new PlaywrightSource({ context })],
         handlers,
         context: {
           // TODO: Extract baseUrl from request and somehow pass it along into HttpNetworkFrame.prototype.resolve().
-          baseUrl: 'http://localhost:5173',
+          baseUrl: baseURL,
         },
       })
 

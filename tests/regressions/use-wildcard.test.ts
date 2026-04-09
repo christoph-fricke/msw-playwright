@@ -3,11 +3,12 @@
  */
 import { test as testBase, expect } from '@playwright/test'
 import { http, HttpResponse, type AnyHandler } from 'msw'
-import { defineNetworkFixture, type NetworkFixture } from '../../src/index.js'
+import { defineNetwork } from 'msw/experimental'
+import { PlaywrightSource } from '../../src/index.js'
 
 interface Fixtures {
   handlers: Array<AnyHandler>
-  network: NetworkFixture
+  network: ReturnType<typeof defineNetwork<PlaywrightSource[]>>
 }
 
 const test = testBase.extend<Fixtures>({
@@ -21,10 +22,14 @@ const test = testBase.extend<Fixtures>({
     { option: true },
   ],
   network: [
-    async ({ context, handlers }, use) => {
-      const network = defineNetworkFixture({
-        context,
+    async ({ context, handlers, baseURL }, use) => {
+      const network = defineNetwork({
+        sources: [new PlaywrightSource({ context })],
         handlers,
+        context: {
+          // TODO: Extract baseUrl from request and somehow pass it along into HttpNetworkFrame.prototype.resolve().
+          baseUrl: baseURL,
+        },
       })
 
       await network.enable()

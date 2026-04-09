@@ -8,7 +8,7 @@ import {
   INTERNAL_MATCH_ALL_REG_EXP,
 } from './utils.js'
 
-interface PlaywrightSourceOptions {
+export interface PlaywrightSourceOptions {
   context: BrowserContext
   skipAssetRequests?: boolean
 }
