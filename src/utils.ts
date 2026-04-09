@@ -1,4 +1,4 @@
-import type { Route } from '@playwright/test'
+import type { BrowserContext, Route } from '@playwright/test'
 
 /**
  * @note Use a match-all RegExp with an optional group as the predicate
@@ -50,5 +50,37 @@ export async function handleRouteSafely(
     }
 
     throw error
+  }
+}
+
+interface InternalWebSocketRoute {
+  url: Parameters<BrowserContext['routeWebSocket']>[0]
+  handler: Parameters<BrowserContext['routeWebSocket']>[1]
+}
+
+/**
+ * Custom implementation of the missing `page.unrouteWebSocket()` to remove
+ * WebSocket route handlers from the page. Loosely inspired by `page.unroute()`.
+ */
+export async function unrouteWebSocket(
+  target: BrowserContext,
+  url: InternalWebSocketRoute['url'],
+  handler?: InternalWebSocketRoute['handler'],
+): Promise<void> {
+  if (
+    !('_webSocketRoutes' in target && Array.isArray(target._webSocketRoutes))
+  ) {
+    return
+  }
+
+  for (let i = target._webSocketRoutes.length - 1; i >= 0; i--) {
+    const route = target._webSocketRoutes[i] as InternalWebSocketRoute
+
+    if (
+      route.url === url &&
+      (handler != null ? route.handler === handler : true)
+    ) {
+      target._webSocketRoutes.splice(i, 1)
+    }
   }
 }

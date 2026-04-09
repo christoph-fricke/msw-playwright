@@ -1,4 +1,4 @@
-import type { BrowserContext, Route } from '@playwright/test'
+import type { BrowserContext, Route, WebSocketRoute } from '@playwright/test'
 import { isCommonAssetRequest } from 'msw'
 import { NetworkSource } from 'msw/experimental'
 import { PlaywrightHttpNetworkFrame } from './frames/http-frame.js'
@@ -6,14 +6,18 @@ import {
   convertToRequest,
   handleRouteSafely,
   INTERNAL_MATCH_ALL_REG_EXP,
+  unrouteWebSocket,
 } from './utils.js'
+import { PlaywrightWebSocketNetworkFrame } from './frames/websocket-frame.js'
 
 export interface PlaywrightSourceOptions {
   context: BrowserContext
   skipAssetRequests?: boolean
 }
 
-export class PlaywrightSource extends NetworkSource<PlaywrightHttpNetworkFrame> {
+export class PlaywrightSource extends NetworkSource<
+  PlaywrightHttpNetworkFrame | PlaywrightWebSocketNetworkFrame
+> {
   #context: BrowserContext
   #skipAssetRequests: boolean
 
@@ -26,16 +30,22 @@ export class PlaywrightSource extends NetworkSource<PlaywrightHttpNetworkFrame> 
   async enable(): Promise<void> {
     await this.#context.route(
       INTERNAL_MATCH_ALL_REG_EXP,
-      this.#handleRouteRequest.bind(this),
+      this.#handleRequestRoute.bind(this),
+    )
+
+    await this.#context.routeWebSocket(
+      INTERNAL_MATCH_ALL_REG_EXP,
+      this.#handleWebSocketRoute.bind(this),
     )
   }
 
   async disable(): Promise<void> {
     super.disable()
     await this.#context.unroute(INTERNAL_MATCH_ALL_REG_EXP)
+    await unrouteWebSocket(this.#context, INTERNAL_MATCH_ALL_REG_EXP)
   }
 
-  async #handleRouteRequest(route: Route): Promise<void> {
+  async #handleRequestRoute(route: Route): Promise<void> {
     const request = await convertToRequest(route)
 
     /**
@@ -49,6 +59,11 @@ export class PlaywrightSource extends NetworkSource<PlaywrightHttpNetworkFrame> 
     }
 
     const frame = new PlaywrightHttpNetworkFrame({ route, request })
+    await this.queue(frame)
+  }
+
+  async #handleWebSocketRoute(route: WebSocketRoute): Promise<void> {
+    const frame = new PlaywrightWebSocketNetworkFrame({ route })
     await this.queue(frame)
   }
 }
