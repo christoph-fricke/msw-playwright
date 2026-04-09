@@ -23,14 +23,14 @@ export class PlaywrightSource extends NetworkSource<PlaywrightHttpNetworkFrame> 
     this.#skipAssetRequests = options.skipAssetRequests ?? true
   }
 
-  override async enable(): Promise<void> {
+  async enable(): Promise<void> {
     await this.#context.route(
       INTERNAL_MATCH_ALL_REG_EXP,
       this.#handleRouteRequest.bind(this),
     )
   }
 
-  override async disable(): Promise<void> {
+  async disable(): Promise<void> {
     super.disable()
     await this.#context.unroute(INTERNAL_MATCH_ALL_REG_EXP)
   }

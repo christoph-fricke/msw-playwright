@@ -16,7 +16,7 @@ export class PlaywrightHttpNetworkFrame extends HttpNetworkFrame {
     this.#route = options.route
   }
 
-  override async respondWith(response?: Response): Promise<void> {
+  async respondWith(response?: Response): Promise<void> {
     if (!response) return
 
     if (response.status === 0) {
@@ -26,11 +26,11 @@ export class PlaywrightHttpNetworkFrame extends HttpNetworkFrame {
     return await handleRouteSafely(() => fulfillResponse(this.#route, response))
   }
 
-  override passthrough(): Promise<void> {
+  passthrough(): Promise<void> {
     return handleRouteSafely(() => this.#route.fallback())
   }
 
-  override errorWith(reason?: unknown): Promise<void> {
+  errorWith(reason?: unknown): Promise<void> {
     if (reason instanceof Response) {
       return handleRouteSafely(() => fulfillResponse(this.#route, reason))
     }
