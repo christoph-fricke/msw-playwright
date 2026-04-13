@@ -15,7 +15,7 @@ const test = testBase.extend<Fixtures>({
   network: [
     async ({ context, handlers }, use) => {
       const network = defineNetwork({
-        sources: [new PlaywrightSource({ context })],
+        sources: [new PlaywrightSource(context)],
         handlers,
       })
 

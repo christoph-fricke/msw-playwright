@@ -1,4 +1,4 @@
-import type { BrowserContext, Route } from '@playwright/test'
+import type { BrowserContext, Page, Route } from '@playwright/test'
 
 /**
  * @note Use a match-all RegExp with an optional group as the predicate
@@ -76,7 +76,7 @@ interface InternalWebSocketRoute {
  * WebSocket route handlers from the page. Loosely inspired by `page.unroute()`.
  */
 export async function unrouteWebSocket(
-  target: BrowserContext,
+  target: BrowserContext | Page,
   url: InternalWebSocketRoute['url'],
   handler?: InternalWebSocketRoute['handler'],
 ): Promise<void> {

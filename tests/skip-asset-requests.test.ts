@@ -13,7 +13,7 @@ const test = testBase.extend<Fixtures>({
   network: [
     async ({ context, handlers }, use) => {
       const network = defineNetwork({
-        sources: [new PlaywrightSource({ context })],
+        sources: [new PlaywrightSource(context)],
         handlers,
       })
 
@@ -46,7 +46,7 @@ const testWithAssets = testBase.extend<Fixtures>({
   network: [
     async ({ context, handlers }, use) => {
       const network = defineNetwork({
-        sources: [new PlaywrightSource({ context, skipAssetRequests: false })],
+        sources: [new PlaywrightSource(context, { skipAssetRequests: false })],
         handlers,
       })
 

@@ -1,4 +1,9 @@
-import type { BrowserContext, Route, WebSocketRoute } from '@playwright/test'
+import type {
+  BrowserContext,
+  Page,
+  Route,
+  WebSocketRoute,
+} from '@playwright/test'
 import { isCommonAssetRequest } from 'msw'
 import { NetworkSource } from 'msw/experimental'
 import { PlaywrightHttpNetworkFrame } from './frames/http-frame.js'
@@ -12,29 +17,28 @@ import {
 import { PlaywrightWebSocketNetworkFrame } from './frames/websocket-frame.js'
 
 export interface PlaywrightSourceOptions {
-  context: BrowserContext
   skipAssetRequests?: boolean
 }
 
 export class PlaywrightSource extends NetworkSource<
   PlaywrightHttpNetworkFrame | PlaywrightWebSocketNetworkFrame
 > {
-  #context: BrowserContext
+  #target: BrowserContext | Page
   #skipAssetRequests: boolean
 
-  constructor(options: PlaywrightSourceOptions) {
+  constructor(target: BrowserContext | Page, options?: PlaywrightSourceOptions) {
     super()
-    this.#context = options.context
-    this.#skipAssetRequests = options.skipAssetRequests ?? true
+    this.#target = target
+    this.#skipAssetRequests = options?.skipAssetRequests ?? true
   }
 
   async enable(): Promise<void> {
-    await this.#context.route(
+    await this.#target.route(
       INTERNAL_MATCH_ALL_REG_EXP,
       this.#handleRequestRoute.bind(this),
     )
 
-    await this.#context.routeWebSocket(
+    await this.#target.routeWebSocket(
       INTERNAL_MATCH_ALL_REG_EXP,
       this.#handleWebSocketRoute.bind(this),
     )
@@ -42,8 +46,8 @@ export class PlaywrightSource extends NetworkSource<
 
   async disable(): Promise<void> {
     super.disable()
-    await this.#context.unroute(INTERNAL_MATCH_ALL_REG_EXP)
-    await unrouteWebSocket(this.#context, INTERNAL_MATCH_ALL_REG_EXP)
+    await this.#target.unroute(INTERNAL_MATCH_ALL_REG_EXP)
+    await unrouteWebSocket(this.#target, INTERNAL_MATCH_ALL_REG_EXP)
   }
 
   async #handleRequestRoute(route: Route): Promise<void> {
