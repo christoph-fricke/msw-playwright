@@ -18,6 +18,19 @@ export async function convertToRequest(route: Route): Promise<Request> {
   })
 }
 
+export function inferBaseUrl(route: Route): string | undefined {
+  const request = route.request()
+  let url = request.headers().referer
+
+  if (!url && request.isNavigationRequest()) {
+    url = request.url()
+  } else if (!url && request.serviceWorker() === null) {
+    url = request.frame().url()
+  }
+
+  return url ? new URL(url).origin : undefined
+}
+
 export async function fulfillResponse(
   route: Route,
   response: Response,

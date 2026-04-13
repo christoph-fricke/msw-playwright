@@ -2,18 +2,37 @@ import type { Route } from '@playwright/test'
 import { HttpNetworkFrame } from 'msw/experimental'
 import { fulfillResponse, handleRouteSafely } from '../utils.js'
 
+import type { RequestHandler } from 'msw'
+import type { UnhandledFrameHandle } from '../../node_modules/msw/lib/core/experimental/on-unhandled-frame.mjs'
+import type { NetworkFrameResolutionContext } from '../../node_modules/msw/lib/core/experimental/frames/network-frame.mjs'
+
 interface PlaywrightHttpNetworkFrameOptions {
   request: Request
   id?: string
   route: Route
+  inferredBaseUrl?: string
 }
 
 export class PlaywrightHttpNetworkFrame extends HttpNetworkFrame {
   #route: Route
+  #inferredBaseUrl?: string
 
   constructor(options: PlaywrightHttpNetworkFrameOptions) {
     super(options)
     this.#route = options.route
+    this.#inferredBaseUrl = options.inferredBaseUrl
+  }
+
+  resolve(
+    handlers: Array<RequestHandler>,
+    onUnhandledFrame: UnhandledFrameHandle,
+    resolutionContext?: NetworkFrameResolutionContext,
+  ): Promise<boolean | null> {
+    return super.resolve(handlers, onUnhandledFrame, {
+      ...resolutionContext,
+      baseUrl: resolutionContext?.baseUrl ?? this.#inferredBaseUrl,
+      quiet: resolutionContext?.quiet !== false,
+    })
   }
 
   async respondWith(response?: Response): Promise<void> {

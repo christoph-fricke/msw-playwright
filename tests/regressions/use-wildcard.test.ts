@@ -22,14 +22,10 @@ const test = testBase.extend<Fixtures>({
     { option: true },
   ],
   network: [
-    async ({ context, handlers, baseURL }, use) => {
+    async ({ context, handlers }, use) => {
       const network = defineNetwork({
         sources: [new PlaywrightSource({ context })],
         handlers,
-        context: {
-          // TODO: Extract baseUrl from request and somehow pass it along into HttpNetworkFrame.prototype.resolve().
-          baseUrl: baseURL,
-        },
       })
 
       await network.enable()

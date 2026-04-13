@@ -5,6 +5,7 @@ import { PlaywrightHttpNetworkFrame } from './frames/http-frame.js'
 import {
   convertToRequest,
   handleRouteSafely,
+  inferBaseUrl,
   INTERNAL_MATCH_ALL_REG_EXP,
   unrouteWebSocket,
 } from './utils.js'
@@ -58,7 +59,11 @@ export class PlaywrightSource extends NetworkSource<
       return await handleRouteSafely(() => route.fallback())
     }
 
-    const frame = new PlaywrightHttpNetworkFrame({ route, request })
+    const frame = new PlaywrightHttpNetworkFrame({
+      route,
+      request,
+      inferredBaseUrl: inferBaseUrl(route),
+    })
     await this.queue(frame)
   }
 
