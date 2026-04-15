@@ -11,11 +11,19 @@ import type { WebSocketRoute } from '@playwright/test'
 import { WebSocketNetworkFrame } from 'msw/experimental'
 import { invariant } from 'outvariant'
 
+import type { WebSocketHandler } from 'msw'
+import type { UnhandledFrameHandle } from '../../node_modules/msw/lib/core/experimental/on-unhandled-frame.mjs'
+import type { NetworkFrameResolutionContext } from '../../node_modules/msw/lib/core/experimental/frames/network-frame.mjs'
+
 interface PlaywrightWebSocketNetworkFrameOptions {
   route: WebSocketRoute
+  inferredBaseUrl?: string
 }
 
 export class PlaywrightWebSocketNetworkFrame extends WebSocketNetworkFrame {
+  #route: WebSocketRoute
+  #inferredBaseUrl?: string
+
   constructor(options: PlaywrightWebSocketNetworkFrameOptions) {
     super({
       connection: {
@@ -24,28 +32,34 @@ export class PlaywrightWebSocketNetworkFrame extends WebSocketNetworkFrame {
         info: { protocols: [] },
       },
     })
+    this.#route = options.route
+    this.#inferredBaseUrl = options.inferredBaseUrl
+  }
+
+  resolve(
+    handlers: Array<WebSocketHandler>,
+    onUnhandledFrame: UnhandledFrameHandle,
+    resolutionContext?: NetworkFrameResolutionContext,
+  ): Promise<boolean | null> {
+    return super.resolve(handlers, onUnhandledFrame, {
+      ...resolutionContext,
+      baseUrl: resolutionContext?.baseUrl ?? this.#inferredBaseUrl,
+      quiet: resolutionContext?.quiet !== false,
+    })
   }
 
   passthrough(): void {
-    this.data.connection.server.connect()
+    // TODO: Alternative: this.data.connection.server.connect()
+    // Should that happen earlier in resolve(), if handlers === 0?
+    // Similar to previous SetupPlaywrightApi implementation.
+    this.#route.connectToServer()
   }
 
   errorWith(reason?: unknown): void {
     if (!(reason instanceof Error)) return
 
-    /**
-     * Use `client.errorWith(reason)` in the future.
-     * @see https://github.com/mswjs/interceptors/issues/747
-     */
-    const event = new Event('error')
-
-    Object.defineProperty(event, 'cause', {
-      enumerable: true,
-      configurable: false,
-      value: reason,
-    })
-
-    this.data.connection.client.socket.dispatchEvent(event)
+    /** @note Playwright does support error events. Close with error instead. */
+    this.#route.close({ code: 1011, reason: reason.message })
   }
 }
 

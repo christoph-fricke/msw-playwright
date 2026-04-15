@@ -10,7 +10,8 @@ import { PlaywrightHttpNetworkFrame } from './frames/http-frame.js'
 import {
   convertToRequest,
   handleRouteSafely,
-  inferBaseUrl,
+  inferPageBaseUrl,
+  inferRouteBaseUrl,
   INTERNAL_MATCH_ALL_REG_EXP,
   unrouteWebSocket,
 } from './utils.js'
@@ -26,7 +27,10 @@ export class PlaywrightSource extends NetworkSource<
   #target: BrowserContext | Page
   #skipAssetRequests: boolean
 
-  constructor(target: BrowserContext | Page, options?: PlaywrightSourceOptions) {
+  constructor(
+    target: BrowserContext | Page,
+    options?: PlaywrightSourceOptions,
+  ) {
     super()
     this.#target = target
     this.#skipAssetRequests = options?.skipAssetRequests ?? true
@@ -66,13 +70,16 @@ export class PlaywrightSource extends NetworkSource<
     const frame = new PlaywrightHttpNetworkFrame({
       route,
       request,
-      inferredBaseUrl: inferBaseUrl(route),
+      inferredBaseUrl: inferRouteBaseUrl(route),
     })
     await this.queue(frame)
   }
 
   async #handleWebSocketRoute(route: WebSocketRoute): Promise<void> {
-    const frame = new PlaywrightWebSocketNetworkFrame({ route })
+    const frame = new PlaywrightWebSocketNetworkFrame({
+      route,
+      inferredBaseUrl: inferPageBaseUrl(this.#target),
+    })
     await this.queue(frame)
   }
 }

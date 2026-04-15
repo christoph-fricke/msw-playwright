@@ -18,7 +18,7 @@ export async function convertToRequest(route: Route): Promise<Request> {
   })
 }
 
-export function inferBaseUrl(route: Route): string | undefined {
+export function inferRouteBaseUrl(route: Route): string | undefined {
   const request = route.request()
   let url = request.headers().referer
 
@@ -29,6 +29,17 @@ export function inferBaseUrl(route: Route): string | undefined {
   }
 
   return url ? new URL(url).origin : undefined
+}
+
+export function inferPageBaseUrl(
+  target: BrowserContext | Page,
+): string | undefined {
+  const url = 'url' in target ? target.url() : target.pages().at(-1)?.url()
+  if (!url || url === 'about:blank') return
+
+  // TODO: Copied Encode/Decode from old implementation. Is Encode/Decode needed
+  // for Route Base Url as well? Why is it needed in the first place?
+  return decodeURI(new URL(encodeURI(url)).origin)
 }
 
 export async function fulfillResponse(
