@@ -36,7 +36,6 @@ for (const target of targets) {
 
         await network.enable()
         await use(network)
-        // FIXME: Should be able to use `NetworkReadyState` or a string literal comparison...
         if (network.readyState === 1) {
           await network.disable()
         }

@@ -12,14 +12,15 @@ export async function convertToRequest(route: Route): Promise<Request> {
 export function inferRouteBaseUrl(route: Route): string | undefined {
   const request = route.request()
   let url = request.headers().referer
-
   if (!url && request.isNavigationRequest()) {
     url = request.url()
   } else if (!url && request.serviceWorker() === null) {
     url = request.frame().url()
   }
 
-  if (!url || url === 'about:blank') return undefined
+  if (!url || url === 'about:blank') {
+    return undefined
+  }
   return new URL(url).origin
 }
 
@@ -28,9 +29,9 @@ export function inferPageBaseUrl(
 ): string | undefined {
   const url = 'url' in target ? target.url() : target.pages().at(-1)?.url()
 
-  if (!url || url === 'about:blank') return undefined
-  // TODO: Copied Encode/Decode from old implementation. Is Encode/Decode needed
-  // for Route Base Url as well? Why is it needed in the first place?
+  if (!url || url === 'about:blank') {
+    return undefined
+  }
   return decodeURI(new URL(encodeURI(url)).origin)
 }
 
@@ -95,10 +96,7 @@ export async function registerRouteHandler(
   options?: Parameters<Page['route']>[2],
 ): Promise<UnrouteFn> {
   const result = await target.route(url, handler, options)
-  /**
-   * @note Earlier version (pre Playwright v1.59) did return `void`.
-   * Later, we can always return and work with `Disposable` directly.
-   */
+  /** @note Earlier version (pre Playwright v1.59) did return `void`. */
   if (result) return result.dispose.bind(result)
 
   return () => target.unroute(url, handler)

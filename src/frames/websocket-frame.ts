@@ -49,9 +49,6 @@ export class PlaywrightWebSocketNetworkFrame extends WebSocketNetworkFrame {
   }
 
   passthrough(): void {
-    // TODO: Alternative: this.data.connection.server.connect()
-    // Should that happen earlier in resolve(), if handlers === 0?
-    // Similar to previous SetupPlaywrightApi implementation.
     this.#route.connectToServer()
   }
 
