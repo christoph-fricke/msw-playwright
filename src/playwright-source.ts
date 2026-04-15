@@ -9,11 +9,11 @@ import { NetworkSource } from 'msw/experimental'
 import { PlaywrightHttpNetworkFrame } from './frames/http-frame.js'
 import {
   convertToRequest,
-  handleRouteSafely,
   inferPageBaseUrl,
   inferRouteBaseUrl,
   INTERNAL_MATCH_ALL_REG_EXP,
   unrouteWebSocket,
+  passthroughRequest,
 } from './route-utils.js'
 import { PlaywrightWebSocketNetworkFrame } from './frames/websocket-frame.js'
 
@@ -64,7 +64,7 @@ export class PlaywrightSource extends NetworkSource<
      * @see https://github.com/mswjs/playwright/issues/13
      */
     if (this.#skipAssetRequests && isCommonAssetRequest(request)) {
-      return await handleRouteSafely(() => route.fallback())
+      return await passthroughRequest(route)
     }
 
     const frame = new PlaywrightHttpNetworkFrame({

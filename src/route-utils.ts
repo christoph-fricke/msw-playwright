@@ -46,19 +46,35 @@ export async function fulfillResponse(
   route: Route,
   response: Response,
 ): Promise<void> {
+  try {
   await route.fulfill({
     status: response.status,
     headers: Object.fromEntries(response.headers),
-    body: response.body ? Buffer.from(await response.arrayBuffer()) : undefined,
+      body: response.body
+        ? Buffer.from(await response.arrayBuffer())
+        : undefined,
   })
+  } catch (error) {
+    ignoreRouteHandledError(error)
+  }
 }
 
-export async function handleRouteSafely(
-  callback: () => Promise<void>,
-): Promise<void> {
+export async function abortRequest(route: Route): Promise<void> {
   try {
-    await callback()
+    await route.abort()
   } catch (error) {
+    ignoreRouteHandledError(error)
+  }
+}
+
+export async function passthroughRequest(route: Route): Promise<void> {
+  try {
+    await route.fallback()
+  } catch (error) {
+    ignoreRouteHandledError(error)
+  }
+}
+
     /**
      * @note Ignore "Route is already handled!" errors.
      * Playwright has a bug where requests terminated due to navigation
@@ -66,6 +82,7 @@ export async function handleRouteSafely(
      * detect that scenario as both "route.handled" and "route._handlingPromise" are internal.
      * @see https://github.com/mswjs/playwright/issues/35
      */
+function ignoreRouteHandledError(error: unknown): void {
     if (
       error instanceof Error &&
       /route is already handled/i.test(error.message)
