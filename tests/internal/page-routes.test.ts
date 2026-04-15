@@ -7,13 +7,13 @@ import { test as testBase, expect } from '@playwright/test'
 import type { AnyHandler } from 'msw'
 import { defineNetwork } from 'msw/experimental'
 import { PlaywrightSource } from '../../src/index.js'
-import { INTERNAL_MATCH_ALL_REG_EXP } from '../../src/route-utils.js'
 
 interface Fixtures {
   handlers: Array<AnyHandler>
   network: ReturnType<typeof defineNetwork<PlaywrightSource[]>>
 }
 
+const DEFAULT_PATTERN = '**'
 const test = testBase.extend<Fixtures>({
   handlers: [[], { option: true }],
   network: [
@@ -36,7 +36,7 @@ const test = testBase.extend<Fixtures>({
 
 test('registers a single HTTP route', async ({ page }) => {
   expect(Reflect.get(page, '_routes')).toEqual([
-    expect.objectContaining({ url: INTERNAL_MATCH_ALL_REG_EXP }),
+    expect.objectContaining({ url: DEFAULT_PATTERN }),
   ])
 })
 
@@ -54,7 +54,7 @@ test('preserves user-defined HTTP routes', async ({ page, network }) => {
 
   expect(Reflect.get(page, '_routes')).toEqual([
     expect.objectContaining({ url: '/user-defined', handler: routeHandler }),
-    expect.objectContaining({ url: INTERNAL_MATCH_ALL_REG_EXP }),
+    expect.objectContaining({ url: DEFAULT_PATTERN }),
   ])
 
   await network.disable()
@@ -63,9 +63,27 @@ test('preserves user-defined HTTP routes', async ({ page, network }) => {
   ])
 })
 
+test('preserves user-defined HTTP routes with the same pattern', async ({
+  page,
+  network,
+}) => {
+  const routeHandler = () => {}
+  await page.route(DEFAULT_PATTERN, routeHandler)
+
+  expect(Reflect.get(page, '_routes')).toEqual([
+    expect.objectContaining({ url: DEFAULT_PATTERN, handler: routeHandler }),
+    expect.objectContaining({ url: DEFAULT_PATTERN }),
+  ])
+
+  await network.disable()
+  expect(Reflect.get(page, '_routes')).toEqual([
+    expect.objectContaining({ url: DEFAULT_PATTERN, handler: routeHandler }),
+  ])
+})
+
 test('registers a single WebSocket handler', async ({ page }) => {
   expect(Reflect.get(page, '_webSocketRoutes')).toEqual([
-    expect.objectContaining({ url: INTERNAL_MATCH_ALL_REG_EXP }),
+    expect.objectContaining({ url: DEFAULT_PATTERN }),
   ])
 })
 
@@ -83,11 +101,29 @@ test('preserves user-defined WebSocket routes', async ({ page, network }) => {
 
   expect(Reflect.get(page, '_webSocketRoutes')).toEqual([
     expect.objectContaining({ url: '/user-defined', handler: routeHandler }),
-    expect.objectContaining({ url: INTERNAL_MATCH_ALL_REG_EXP }),
+    expect.objectContaining({ url: DEFAULT_PATTERN }),
   ])
 
   await network.disable()
   expect(Reflect.get(page, '_webSocketRoutes')).toEqual([
     expect.objectContaining({ url: '/user-defined', handler: routeHandler }),
+  ])
+})
+
+test('preserves user-defined WebSocket routes with the same pattern', async ({
+  page,
+  network,
+}) => {
+  const routeHandler = () => {}
+  await page.routeWebSocket(DEFAULT_PATTERN, routeHandler)
+
+  expect(Reflect.get(page, '_webSocketRoutes')).toEqual([
+    expect.objectContaining({ url: DEFAULT_PATTERN, handler: routeHandler }),
+    expect.objectContaining({ url: DEFAULT_PATTERN }),
+  ])
+
+  await network.disable()
+  expect(Reflect.get(page, '_webSocketRoutes')).toEqual([
+    expect.objectContaining({ url: DEFAULT_PATTERN, handler: routeHandler }),
   ])
 })

@@ -1,13 +1,5 @@
 import type { BrowserContext, Page, Route } from '@playwright/test'
 
-/**
- * @note Use a match-all RegExp with an optional group as the predicate
- * for the `page.route()`/`page.unroute()` calls. Playwright treats given RegExp
- * as the handler ID, which allows us to remove only those handlers introduces by us
- * without carrying the reference to the handler function around.
- */
-export const INTERNAL_MATCH_ALL_REG_EXP = /.+(__MSW_PLAYWRIGHT_PREDICATE__)?/
-
 export async function convertToRequest(route: Route): Promise<Request> {
   const request = route.request()
   return new Request(request.url(), {

@@ -12,7 +12,6 @@ import {
   convertToRequest,
   inferPageBaseUrl,
   inferRouteBaseUrl,
-  INTERNAL_MATCH_ALL_REG_EXP,
   passthroughRequest,
   registerRouteHandler,
   registerWebSocketRouteHandler,
@@ -21,13 +20,15 @@ import {
 
 export interface PlaywrightSourceOptions {
   skipAssetRequests?: boolean
+  routePattern?: Parameters<Page['route']>[0]
+  websocketPattern?: Parameters<Page['route']>[0]
 }
 
 export class PlaywrightSource extends NetworkSource<
   PlaywrightHttpNetworkFrame | PlaywrightWebSocketNetworkFrame
 > {
   #target: BrowserContext | Page
-  #skipAssetRequests: boolean
+  #options: Required<PlaywrightSourceOptions>
 
   #routeCleanup: UnrouteFn | null = null
   #wsRouteCleanup: UnrouteFn | null = null
@@ -38,18 +39,23 @@ export class PlaywrightSource extends NetworkSource<
   ) {
     super()
     this.#target = target
-    this.#skipAssetRequests = options?.skipAssetRequests ?? true
+    this.#options = {
+      skipAssetRequests: true,
+      routePattern: '**',
+      websocketPattern: '**',
+      ...options,
+    }
   }
 
   async enable(): Promise<void> {
     this.#routeCleanup ??= await registerRouteHandler(
       this.#target,
-      INTERNAL_MATCH_ALL_REG_EXP,
+      this.#options.routePattern,
       this.#handleRequestRoute.bind(this),
     )
     this.#wsRouteCleanup ??= await registerWebSocketRouteHandler(
       this.#target,
-      INTERNAL_MATCH_ALL_REG_EXP,
+      this.#options.websocketPattern,
       this.#handleWebSocketRoute.bind(this),
     )
   }
@@ -71,7 +77,7 @@ export class PlaywrightSource extends NetworkSource<
      * requests through the matching logic below.
      * @see https://github.com/mswjs/playwright/issues/13
      */
-    if (this.#skipAssetRequests && isCommonAssetRequest(request)) {
+    if (this.#options.skipAssetRequests && isCommonAssetRequest(request)) {
       return await passthroughRequest(route)
     }
 
