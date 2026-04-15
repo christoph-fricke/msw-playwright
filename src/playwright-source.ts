@@ -14,7 +14,7 @@ import {
   inferRouteBaseUrl,
   INTERNAL_MATCH_ALL_REG_EXP,
   unrouteWebSocket,
-} from './utils.js'
+} from './route-utils.js'
 import { PlaywrightWebSocketNetworkFrame } from './frames/websocket-frame.js'
 
 export interface PlaywrightSourceOptions {

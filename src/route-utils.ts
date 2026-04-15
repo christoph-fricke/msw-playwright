@@ -13,7 +13,6 @@ export async function convertToRequest(route: Route): Promise<Request> {
   return new Request(request.url(), {
     method: request.method(),
     headers: new Headers(await request.allHeaders()),
-    // TODO: Can we get rid of the type cast?
     body: request.postDataBuffer() as null | ArrayBuffer,
   })
 }
@@ -28,15 +27,16 @@ export function inferRouteBaseUrl(route: Route): string | undefined {
     url = request.frame().url()
   }
 
-  return url ? new URL(url).origin : undefined
+  if (!url || url === 'about:blank') return undefined
+  return new URL(url).origin
 }
 
 export function inferPageBaseUrl(
   target: BrowserContext | Page,
 ): string | undefined {
   const url = 'url' in target ? target.url() : target.pages().at(-1)?.url()
-  if (!url || url === 'about:blank') return
 
+  if (!url || url === 'about:blank') return undefined
   // TODO: Copied Encode/Decode from old implementation. Is Encode/Decode needed
   // for Route Base Url as well? Why is it needed in the first place?
   return decodeURI(new URL(encodeURI(url)).origin)

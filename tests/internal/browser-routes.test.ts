@@ -7,7 +7,7 @@ import { test as testBase, expect } from '@playwright/test'
 import type { AnyHandler } from 'msw'
 import { defineNetwork } from 'msw/experimental'
 import { PlaywrightSource } from '../../src/index.js'
-import { INTERNAL_MATCH_ALL_REG_EXP } from '../../src/utils.js'
+import { INTERNAL_MATCH_ALL_REG_EXP } from '../../src/route-utils.js'
 
 interface Fixtures {
   handlers: Array<AnyHandler>

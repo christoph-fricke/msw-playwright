@@ -1,6 +1,6 @@
 import type { Route } from '@playwright/test'
 import { HttpNetworkFrame } from 'msw/experimental'
-import { fulfillResponse, handleRouteSafely } from '../utils.js'
+import { fulfillResponse, handleRouteSafely } from '../route-utils.js'
 
 import type { RequestHandler } from 'msw'
 import type { UnhandledFrameHandle } from '../../node_modules/msw/lib/core/experimental/on-unhandled-frame.mjs'
