@@ -47,13 +47,13 @@ export async function fulfillResponse(
   response: Response,
 ): Promise<void> {
   try {
-  await route.fulfill({
-    status: response.status,
-    headers: Object.fromEntries(response.headers),
+    await route.fulfill({
+      status: response.status,
+      headers: Object.fromEntries(response.headers),
       body: response.body
         ? Buffer.from(await response.arrayBuffer())
         : undefined,
-  })
+    })
   } catch (error) {
     ignoreRouteHandledError(error)
   }
@@ -75,23 +75,50 @@ export async function passthroughRequest(route: Route): Promise<void> {
   }
 }
 
-    /**
-     * @note Ignore "Route is already handled!" errors.
-     * Playwright has a bug where requests terminated due to navigation
-     * cause your in-flight route handlers to throw. There's no means to
-     * detect that scenario as both "route.handled" and "route._handlingPromise" are internal.
-     * @see https://github.com/mswjs/playwright/issues/35
-     */
+/**
+ * @note Ignore "Route is already handled!" errors.
+ * Playwright has a bug where requests terminated due to navigation
+ * cause your in-flight route handlers to throw. There's no means to
+ * detect that scenario as both "route.handled" and "route._handlingPromise" are internal.
+ * @see https://github.com/mswjs/playwright/issues/35
+ */
 function ignoreRouteHandledError(error: unknown): void {
-    if (
-      error instanceof Error &&
-      /route is already handled/i.test(error.message)
-    ) {
-      return
-    }
-
-    throw error
+  if (
+    error instanceof Error &&
+    /route is already handled/i.test(error.message)
+  ) {
+    return
   }
+
+  throw error
+}
+
+/** Callback for unmounting a configured route. */
+export type UnrouteFn = () => Promise<void> | void
+
+export async function registerRouteHandler(
+  target: BrowserContext | Page,
+  url: Parameters<Page['route']>[0],
+  handler: Parameters<Page['route']>[1],
+  options?: Parameters<Page['route']>[2],
+): Promise<UnrouteFn> {
+  const result = await target.route(url, handler, options)
+  /**
+   * @note Earlier version (pre Playwright v1.59) did return `void`.
+   * Later, we can always return and work with `Disposable` directly.
+   */
+  if (result) return result.dispose.bind(result)
+
+  return () => target.unroute(url, handler)
+}
+
+export async function registerWebSocketRouteHandler(
+  target: BrowserContext | Page,
+  url: Parameters<BrowserContext['routeWebSocket']>[0],
+  handler: Parameters<BrowserContext['routeWebSocket']>[1],
+): Promise<UnrouteFn> {
+  await target.routeWebSocket(url, handler)
+  return () => unrouteWebSocket(target, url, handler)
 }
 
 interface InternalWebSocketRoute {
@@ -103,11 +130,11 @@ interface InternalWebSocketRoute {
  * Custom implementation of the missing `page.unrouteWebSocket()` to remove
  * WebSocket route handlers from the page. Loosely inspired by `page.unroute()`.
  */
-export async function unrouteWebSocket(
+function unrouteWebSocket(
   target: BrowserContext | Page,
   url: InternalWebSocketRoute['url'],
   handler?: InternalWebSocketRoute['handler'],
-): Promise<void> {
+): void {
   if (
     !('_webSocketRoutes' in target && Array.isArray(target._webSocketRoutes))
   ) {

@@ -8,12 +8,14 @@ import { isCommonAssetRequest } from 'msw'
 import { NetworkSource } from 'msw/experimental'
 import { PlaywrightHttpNetworkFrame } from './frames/http-frame.js'
 import {
+  registerRouteHandler,
+  registerWebSocketRouteHandler,
   convertToRequest,
   inferPageBaseUrl,
   inferRouteBaseUrl,
   INTERNAL_MATCH_ALL_REG_EXP,
-  unrouteWebSocket,
   passthroughRequest,
+  type UnrouteFn,
 } from './route-utils.js'
 import { PlaywrightWebSocketNetworkFrame } from './frames/websocket-frame.js'
 
@@ -27,6 +29,9 @@ export class PlaywrightSource extends NetworkSource<
   #target: BrowserContext | Page
   #skipAssetRequests: boolean
 
+  #routeCleanup: UnrouteFn | null = null
+  #wsRouteCleanup: UnrouteFn | null = null
+
   constructor(
     target: BrowserContext | Page,
     options?: PlaywrightSourceOptions,
@@ -37,12 +42,13 @@ export class PlaywrightSource extends NetworkSource<
   }
 
   async enable(): Promise<void> {
-    await this.#target.route(
+    this.#routeCleanup ??= await registerRouteHandler(
+      this.#target,
       INTERNAL_MATCH_ALL_REG_EXP,
       this.#handleRequestRoute.bind(this),
     )
-
-    await this.#target.routeWebSocket(
+    this.#wsRouteCleanup ??= await registerWebSocketRouteHandler(
+      this.#target,
       INTERNAL_MATCH_ALL_REG_EXP,
       this.#handleWebSocketRoute.bind(this),
     )
@@ -50,8 +56,10 @@ export class PlaywrightSource extends NetworkSource<
 
   async disable(): Promise<void> {
     super.disable()
-    await this.#target.unroute(INTERNAL_MATCH_ALL_REG_EXP)
-    await unrouteWebSocket(this.#target, INTERNAL_MATCH_ALL_REG_EXP)
+    await this.#routeCleanup?.()
+    await this.#wsRouteCleanup?.()
+    this.#routeCleanup = null
+    this.#wsRouteCleanup = null
   }
 
   async #handleRequestRoute(route: Route): Promise<void> {
