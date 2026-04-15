@@ -16,6 +16,7 @@ const test = testBase.extend<Fixtures>({
     async ({ context, handlers }, use) => {
       const network = defineNetwork({
         sources: [new PlaywrightSource(context)],
+        onUnhandledFrame: 'bypass',
         handlers,
       })
 
