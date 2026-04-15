@@ -7,17 +7,17 @@ import type {
 import { isCommonAssetRequest } from 'msw'
 import { NetworkSource } from 'msw/experimental'
 import { PlaywrightHttpNetworkFrame } from './frames/http-frame.js'
+import { PlaywrightWebSocketNetworkFrame } from './frames/websocket-frame.js'
 import {
-  registerRouteHandler,
-  registerWebSocketRouteHandler,
   convertToRequest,
   inferPageBaseUrl,
   inferRouteBaseUrl,
   INTERNAL_MATCH_ALL_REG_EXP,
   passthroughRequest,
+  registerRouteHandler,
+  registerWebSocketRouteHandler,
   type UnrouteFn,
 } from './route-utils.js'
-import { PlaywrightWebSocketNetworkFrame } from './frames/websocket-frame.js'
 
 export interface PlaywrightSourceOptions {
   skipAssetRequests?: boolean

@@ -7,8 +7,8 @@ import {
 } from '../route-utils.js'
 
 import type { RequestHandler } from 'msw'
-import type { UnhandledFrameHandle } from '../../node_modules/msw/lib/core/experimental/on-unhandled-frame.mjs'
 import type { NetworkFrameResolutionContext } from '../../node_modules/msw/lib/core/experimental/frames/network-frame.mjs'
+import type { UnhandledFrameHandle } from '../../node_modules/msw/lib/core/experimental/on-unhandled-frame.mjs'
 
 interface PlaywrightHttpNetworkFrameOptions {
   request: Request
