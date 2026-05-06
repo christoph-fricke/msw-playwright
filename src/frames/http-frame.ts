@@ -34,7 +34,7 @@ export class PlaywrightHttpNetworkFrame extends HttpNetworkFrame {
   ): Promise<boolean | null> {
     return super.resolve(handlers, onUnhandledFrame, {
       ...resolutionContext,
-      baseUrl: resolutionContext?.baseUrl ?? this.#inferredBaseUrl,
+      baseUrl: this.#inferredBaseUrl,
     })
   }
 

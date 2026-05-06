@@ -45,7 +45,7 @@ export class PlaywrightWebSocketNetworkFrame extends WebSocketNetworkFrame {
   ): Promise<boolean | null> {
     return super.resolve(handlers, onUnhandledFrame, {
       ...resolutionContext,
-      baseUrl: resolutionContext?.baseUrl ?? this.#inferredBaseUrl,
+      baseUrl: this.#inferredBaseUrl,
     })
   }
 
