@@ -10,12 +10,11 @@ import {
   type Page,
 } from '@playwright/test'
 import type { AnyHandler } from 'msw'
-import { defineNetwork } from 'msw/experimental'
-import { PlaywrightSource } from '../../src/index.js'
+import { defineNetworkFixture, type NetworkFixture } from '../../src/index.js'
 
 interface Fixtures {
   handlers: Array<AnyHandler>
-  network: ReturnType<typeof defineNetwork<PlaywrightSource[]>>
+  network: NetworkFixture
   target: BrowserContext | Page
 }
 
@@ -29,16 +28,14 @@ for (const target of targets) {
     handlers: [[], { option: true }],
     network: [
       async ({ target, handlers }, use) => {
-        const network = defineNetwork({
-          sources: [new PlaywrightSource(target)],
+        const network = defineNetworkFixture({
+          context: target,
           handlers,
         })
 
         await network.enable()
         await use(network)
-        if (network.readyState === 1) {
-          await network.disable()
-        }
+        await network.disable()
       },
       { auto: true },
     ],

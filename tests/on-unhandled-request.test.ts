@@ -1,22 +1,21 @@
 import { test as testBase, expect } from '@playwright/test'
 import sinon from 'sinon'
 import type { AnyHandler } from 'msw'
-import { defineNetwork } from 'msw/experimental'
-import { PlaywrightSource } from '../src/index.js'
+import { defineNetworkFixture, type NetworkFixture } from '../src/index.js'
 
 interface Fixtures {
   handlers: Array<AnyHandler>
-  network: ReturnType<typeof defineNetwork<PlaywrightSource[]>>
+  network: NetworkFixture
 }
 
 const test = testBase.extend<Fixtures>({
   handlers: [[], { option: true }],
   network: [
     async ({ context, handlers }, use) => {
-      const network = defineNetwork({
-        sources: [new PlaywrightSource(context)],
-        onUnhandledFrame: 'warn',
+      const network = defineNetworkFixture({
+        context,
         handlers,
+        onUnhandledRequest: 'warn',
       })
 
       await network.enable()

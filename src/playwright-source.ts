@@ -19,8 +19,25 @@ import {
 } from './route-utils.js'
 
 export interface PlaywrightSourceOptions {
+  /**
+   * Skip common asset requests (e.g. `*.html`, `*.css`, `*.js`, etc).
+   * This improves performance for certain projects.
+   * @default true
+   *
+   * @see https://mswjs.io/docs/api/is-common-asset-request
+   */
   skipAssetRequests?: boolean
+  /**
+   * A custom route pattern used when registering a Playwright route handler.
+   *
+   * @see https://playwright.dev/docs/api/class-page#page-route-option-url
+   */
   routePattern?: Parameters<Page['route']>[0]
+  /**
+   * A custom route pattern used when registering a Playwright WebSocket route handler.
+   *
+   * @see https://playwright.dev/docs/api/class-page#page-route-web-socket-option-url
+   */
   websocketPattern?: Parameters<Page['route']>[0]
 }
 

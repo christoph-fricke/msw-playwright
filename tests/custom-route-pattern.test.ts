@@ -1,30 +1,25 @@
 import { test as testBase, expect } from '@playwright/test'
 import { http, HttpResponse, ws, type AnyHandler } from 'msw'
-import { defineNetwork } from 'msw/experimental'
-import { PlaywrightSource } from '../src/index.js'
+import { defineNetworkFixture, type NetworkFixture } from '../src/index.js'
 
 interface Fixtures {
   handlers: Array<AnyHandler>
-  network: ReturnType<typeof defineNetwork<PlaywrightSource[]>>
+  network: NetworkFixture
 }
 
 const test = testBase.extend<Fixtures>({
   handlers: [[], { option: true }],
   network: [
     async ({ context, handlers }, use) => {
-      const network = defineNetwork({
-        sources: [
-          new PlaywrightSource(context, {
-            routePattern: `/api/**`,
-            websocketPattern: `**/realtime`,
-          }),
-        ],
-        onUnhandledFrame: 'bypass',
+      const network = defineNetworkFixture({
+        context,
         handlers,
+        routePattern: `/api/**`,
+        websocketPattern: `**/realtime`,
       })
 
       /**
-       * @note Fallback use to verify the "ignore" case. MUST be registered
+       * @note Fallback used to verify the "ignore" case. MUST be registered
        * before the network is enabled for the test to be meaningful, because
        * Playwright also picks most recently registered, matching routes first.
        */

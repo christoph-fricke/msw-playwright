@@ -27,7 +27,9 @@ export class PlaywrightWebSocketNetworkFrame extends WebSocketNetworkFrame {
   constructor(options: PlaywrightWebSocketNetworkFrameOptions) {
     super({
       connection: {
+        // @ts-expect-error WebSocketClientConnectionProtocol not assignable to WebSocketClientConnection
         client: new PlaywrightWebSocketClientConnection(options.route),
+        // @ts-expect-error WebSocketServerConnectionProtocol not assignable to WebSocketServerConnection
         server: new PlaywrightWebSocketServerConnection(options.route),
         info: { protocols: [] },
       },
