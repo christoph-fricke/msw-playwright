@@ -35,7 +35,6 @@ export class PlaywrightHttpNetworkFrame extends HttpNetworkFrame {
     return super.resolve(handlers, onUnhandledFrame, {
       ...resolutionContext,
       baseUrl: resolutionContext?.baseUrl ?? this.#inferredBaseUrl,
-      quiet: resolutionContext?.quiet !== false,
     })
   }
 
